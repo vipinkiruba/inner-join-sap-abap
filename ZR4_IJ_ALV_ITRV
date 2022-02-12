@@ -1,0 +1,175 @@
+*&---------------------------------------------------------------------*
+*& Report ZR4_IJ_ALV_ITRV
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zr4_ij_alv_itrv.
+TABLES: ztab_vbak,ztab_vbap.
+
+TYPES: BEGIN OF struct_interactive,
+         vbeln TYPE ztab_vbap-vbeln,
+         matnr TYPE ztab_vbap-matnr,
+         matwa TYPE ztab_vbap-matwa,
+         matkl TYPE ztab_vbap-matkl,
+
+       END OF struct_interactive.
+
+*ZST_INNERJOIN IS AN USER DEFINED STUCTURE
+*CREATE IT AND WA FOR THE STUCTURE
+
+DATA: it TYPE TABLE OF zst_innerjoin,
+      wa TYPE zst_innerjoin.
+DATA: it_itrv TYPE TABLE OF struct_interactive,
+      wa_itrv TYPE struct_interactive.
+*  important it tables and wa which are pre defined for alv
+DATA: it_fcat TYPE slis_t_fieldcat_alv,
+      wa_fcat TYPE slis_fieldcat_alv,
+      wa_layo TYPE slis_layout_alv.
+
+selection-screen begin of block b1 with frame. " used for a frame designing
+PARAMETERS: vbeln_p TYPE i MATCHCODE OBJECT ZSH1_VBAP.
+SELECT-OPTIONS: vbeln_r FOR ztab_vbak-vbeln MATCHCODE OBJECT ZSH1_VBAP. " USED A SEARCH HELP HERE
+selection-screen end of block b1.
+
+*USING FORM CALL
+PERFORM insert.
+PERFORM display.
+
+*USE ALIAS NAMES AS A AND B
+*FETCH DATA AND INSERT IT INTO THE STUCTURE
+FORM insert .
+
+  SELECT
+    a~vbeln
+  a~erdat
+  a~ernam
+  a~audat
+    b~matnr
+  b~matwa
+  b~matkl
+  FROM ztab_vbak AS a
+  INNER JOIN ztab_vbap AS b
+  ON b~vbeln = a~vbeln
+  INTO TABLE it
+  WHERE a~vbeln IN vbeln_r. " FOR SELECTING SINGLE QUERY USE a~vbeln = vbeln_P.
+
+ENDFORM.
+*NOW THE DATA HAS BEEN INSERTED INTO OUR INTERNAL TABLE
+
+*LOOP AND DISPLAY THE DATA BY USING WORK AREA
+FORM display.
+
+*   field catlog designing should start here
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '1'. " for position of the column
+  wa_fcat-fieldname = 'VBELN'. " to fetch the column in table
+  wa_fcat-seltext_l = 'VBELN'. " this name is displayed in the alv output field header
+  wa_fcat-no_zero = abap_true. " used to remove the preseding zeros
+  wa_fcat-hotspot = 'x'. " used to highlight this field (just for display purpose to navigate)
+  APPEND wa_fcat TO it_fcat.
+
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '2'.
+  wa_fcat-fieldname = 'ERDAT'.
+  wa_fcat-seltext_l = 'ERDAT'.
+  APPEND wa_fcat TO it_fcat.
+
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '3'.
+  wa_fcat-fieldname = 'ERNAM'.
+  wa_fcat-seltext_l = 'ERNAM'.
+  APPEND wa_fcat TO it_fcat.
+
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '4'.
+  wa_fcat-fieldname = 'AUDAT'.
+  wa_fcat-seltext_l = 'AUDAT'.
+  APPEND wa_fcat TO it_fcat.
+
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '5'.
+  wa_fcat-fieldname = 'MATNR'.
+  wa_fcat-seltext_l = 'MATNR'.
+  wa_fcat-no_zero = abap_true. " used to remove the preseding zeros
+  APPEND wa_fcat TO it_fcat.
+
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '6'.
+  wa_fcat-fieldname = 'MATWA'.
+  wa_fcat-seltext_l = 'MATWA'.
+  APPEND wa_fcat TO it_fcat.
+
+  CLEAR wa_fcat.
+  wa_fcat-col_pos = '7'.
+  wa_fcat-fieldname = 'MATKL'.
+  wa_fcat-seltext_l = 'MATKL'.
+  APPEND wa_fcat TO it_fcat.
+
+  wa_layo-colwidth_optimize = 'x'. " used to optimize the column width accroding to the data size
+
+*to display the data we use reuse alv grid function module
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+*these two is used for navigation
+      i_callback_program      = sy-repid " it fetch and pass our report name (zr_taskxxx)
+      i_callback_user_command = 'USER_COMMAND' " this event should be passed to trigger our user_command form
+*this should be passed to display the output
+      is_layout               = wa_layo
+      it_fieldcat             = it_fcat
+    TABLES
+      t_outtab                = it.
+
+ENDFORM.
+
+*form user_command.
+*  write 'working'.
+*  endform.
+
+FORM user_command USING r_comm TYPE sy-ucomm " this will capture the value of user clicling in output screen // for r_comm = &ic1
+      r_selfield TYPE slis_selfield. " it has so many fields and functions double click to check it
+
+  CASE r_comm.
+    WHEN '&IC1'.
+
+      READ TABLE it INTO wa INDEX r_selfield-tabindex.
+      IF sy-subrc = 0.
+        SELECT vbeln matnr matwa matkl FROM ztab_vbap INTO TABLE it_itrv WHERE vbeln = wa-vbeln.
+        CLEAR it_fcat.
+        CLEAR wa_fcat.
+        wa_fcat-col_pos = '1'.
+        wa_fcat-fieldname = 'VBELN'.
+        wa_fcat-seltext_l = 'VBELN'.
+        wa_fcat-no_zero = abap_true. " used to remove the preseding zeros
+        APPEND wa_fcat TO it_fcat.
+
+        CLEAR wa_fcat.
+        wa_fcat-col_pos = '2'.
+        wa_fcat-fieldname = 'MATNR'.
+        wa_fcat-seltext_l = 'MATNR'.
+        wa_fcat-no_zero = abap_true. " used to remove the preseding zeros
+        APPEND wa_fcat TO it_fcat.
+
+        CLEAR wa_fcat.
+        wa_fcat-col_pos = '3'.
+        wa_fcat-fieldname = 'MATWA'.
+        wa_fcat-seltext_l = 'MATWA'.
+        APPEND wa_fcat TO it_fcat.
+
+        CLEAR wa_fcat.
+        wa_fcat-col_pos = '4'.
+        wa_fcat-fieldname = 'MATKL'.
+        wa_fcat-seltext_l = 'MATKL'.
+        APPEND wa_fcat TO it_fcat.
+
+        CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+          EXPORTING
+            is_layout   = wa_layo
+            it_fieldcat = it_fcat
+          TABLES
+            t_outtab    = it_itrv.
+
+      ENDIF.
+  ENDCASE.
+
+ENDFORM.
