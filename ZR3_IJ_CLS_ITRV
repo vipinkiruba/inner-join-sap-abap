@@ -1,0 +1,84 @@
+*&---------------------------------------------------------------------*
+*& Report ZR3_IJ_CLS_ITRV
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zr3_ij_cls_itrv.
+
+
+TABLES: ztab_vbak,ztab_vbap.
+
+TYPES: BEGIN OF struct_interactive,
+         vbeln TYPE ztab_vbap-vbeln,
+         matnr TYPE ztab_vbap-matnr,
+         matwa TYPE ztab_vbap-matwa,
+         matkl TYPE ztab_vbap-matkl,
+
+       END OF struct_interactive.
+
+*ZST_INNERJOIN IS AN USER DEFINED STUCTURE
+*CREATE IT AND WA FOR THE STUCTURE
+
+DATA: it TYPE TABLE OF zst_innerjoin,
+      wa TYPE zst_innerjoin.
+DATA: it_itrv TYPE TABLE OF struct_interactive,
+      wa_itrv TYPE struct_interactive.
+
+PARAMETERS: vbeln_p TYPE i MATCHCODE OBJECT ZSH1_VBAP.
+SELECT-OPTIONS: vbeln_r FOR ztab_vbak-vbeln MATCHCODE OBJECT ZSH1_VBAP.
+
+*USING FORM CALL
+PERFORM insert.
+PERFORM display.
+
+*USE ALIAS NAMES AS A AND B
+*FETCH DATA AND INSERT IT INTO THE STUCTURE
+FORM insert .
+
+  SELECT
+    a~vbeln
+  a~erdat
+  a~ernam
+  a~audat
+    b~matnr
+  b~matwa
+  b~matkl
+  FROM ztab_vbak AS a
+  INNER JOIN ztab_vbap AS b
+  ON b~vbeln = a~vbeln
+  INTO TABLE it
+  WHERE a~vbeln IN vbeln_r. " FOR SELECTING SINGLE QUERY USE a~vbeln = vbeln_P.
+
+ENDFORM.
+*NOW THE DATA HAS BEEN INSERTED INTO OUR INTERNAL TABLE
+
+*LOOP AND DISPLAY THE DATA BY USING WORK AREA
+FORM display.
+
+  LOOP AT it INTO wa.
+    WRITE: / wa-vbeln,
+           wa-erdat,
+           wa-ernam,
+           wa-audat,
+           wa-matnr,
+           wa-matwa,
+           wa-matkl.
+    HIDE wa-vbeln. " THIS STATEMENT WILL STORE THE DATA CLICKED BY THE USER AND CALL AT LINE SELECTION
+  ENDLOOP.
+ENDFORM.
+
+AT LINE-SELECTION.
+*  HERE WE ARE CREATING A NEW OUTPUT SCREEN WITH VBAP DATAS
+  SELECT vbeln
+    matnr
+           matwa
+           matkl FROM ztab_vbap INTO TABLE it_itrv WHERE vbeln = wa-vbeln.
+*LOOP IT TO PRINT THE OUPTUP
+  LOOP AT it_itrv INTO wa_itrv.
+    WRITE: /
+    wa_itrv-vbeln ,
+    wa_itrv-matnr,
+             wa_itrv-matwa,
+             wa_itrv-matkl.
+
+  ENDLOOP.
