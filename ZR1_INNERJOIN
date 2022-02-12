@@ -1,0 +1,82 @@
+*&---------------------------------------------------------------------*
+*& Report ZR1_INNERJOIN
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zr1_innerjoin.
+TABLES: ztab_vbak, ztab_vbap.
+*this report consist of innerjoin of two tables using stuctures method
+*CREATE A STUCTURE FOR BOTH TABLES VBAK AND VBAP
+TYPES: BEGIN OF struct_vbak,
+         vbeln TYPE ztab_vbak-vbeln,
+         erdat TYPE ztab_vbak-erdat,
+         ernam TYPE ztab_vbak-ernam,
+         audat TYPE ztab_vbak-audat,
+       END OF struct_vbak.
+
+TYPES: BEGIN OF struct_vbap,
+         vbeln TYPE ztab_vbap-vbeln,
+         matnr TYPE ztab_vbap-matnr,
+         matwa TYPE ztab_vbap-matwa,
+         matkl TYPE ztab_vbap-matkl,
+       END OF struct_vbap.
+
+*CREATE A STUCTURE FOR OUR INNERJOINED OUTPUT TABLE
+TYPES: BEGIN OF struct_final,
+         vbeln TYPE ztab_vbak-vbeln,
+         erdat TYPE ztab_vbak-erdat,
+         ernam TYPE ztab_vbak-ernam,
+         audat TYPE ztab_vbak-audat,
+         matnr TYPE ztab_vbap-matnr,
+         matwa TYPE ztab_vbap-matwa,
+         matkl TYPE ztab_vbap-matkl,
+       END OF struct_final.
+
+*FOR ALLL THE STUCTURES CREATE INTERNAL TABLE AND WORK AREA
+DATA: it_vbak  TYPE TABLE OF struct_vbak,
+      wa_vbak  TYPE struct_vbak,
+      it_vbap  TYPE TABLE OF struct_vbap,
+      wa_vbap  TYPE struct_vbap,
+      it_final TYPE TABLE OF struct_final,
+      wa_final TYPE struct_final.
+
+*for single search use parameter option for a range use select options
+PARAMETERS: vbeln_p TYPE ztab_vbak-vbeln MATCHCODE OBJECT ZSH1_VBAP. " USED AN ELEMENTARY SEARCH HELP
+SELECT-OPTIONS: vbeln_r FOR ztab_vbak-vbeln MATCHCODE OBJECT ZSH1_VBAP..
+
+*SELECT THE DATAS WE WANT FROM VBAK TABLE AND INSERT IT INTO THE INTERNAL TABLE OF VBAK
+SELECT vbeln erdat ernam audat FROM ztab_vbak INTO TABLE it_vbak.
+
+*WE NEED TO SELECT THE RIGHT VBAP ROW WHERE VBELN'S IS EQUAL
+IF it_vbak IS NOT INITIAL.
+  SELECT vbeln matnr matwa matkl FROM ztab_vbap INTO TABLE it_vbap WHERE vbeln in vbeln_r. "for parameter----> vbeln = vbeln_p.
+ENDIF.
+
+LOOP AT it_vbap INTO wa_vbap.
+
+  wa_final-vbeln = wa_vbap-vbeln.
+  wa_final-matnr = wa_vbap-matnr.
+  wa_final-matwa = wa_vbap-matwa.
+  wa_final-matkl = wa_vbap-matkl.
+*TO REDUCE THE LOOPING WE ARE NESTING VBAK USING READ STATEMENT
+  READ TABLE it_vbak INTO wa_vbak WITH KEY vbeln = wa_vbap-vbeln.
+
+  wa_final-erdat = wa_vbak-erdat.
+  wa_final-ernam = wa_vbak-ernam.
+  wa_final-audat = wa_vbak-audat.
+
+  APPEND wa_final TO it_final. "APPENDING THE WORK AREA TO INTERNAL TABLE
+ENDLOOP.
+
+*WRITE: / 'working'.
+
+*LOOP TO PRINT THE OUTPUT
+LOOP AT it_final INTO wa_final.
+  WRITE: / wa_final-vbeln
+  , wa_final-matnr ,
+   wa_final-matwa ,
+    wa_final-matkl ,
+  wa_final-erdat ,
+   wa_final-ernam ,
+    wa_final-audat.
+ENDLOOP.
