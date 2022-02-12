@@ -1,0 +1,44 @@
+FUNCTION ZM_TAB_ALV.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     REFERENCE(IP_VBELN) TYPE  ZTAB_VBAK-VBELN
+*"  EXPORTING
+*"     REFERENCE(IT_VBAK) TYPE  ZTAB_VBAK_DT
+*"     REFERENCE(IT_VBAP) TYPE  ZTAB_VBAP_DT
+*"     REFERENCE(IT_FINAL) TYPE  ZST_INNERJOIN_DT
+*"----------------------------------------------------------------------
+
+
+DATA: WA_final TYPE ZST_INNERJOIN,
+      WA_vbak TYPE ztab_vbak,
+      WA_vbap TYPE ztab_vbap.
+
+  select * from ztab_vbak
+    into CORRESPONDING FIELDS OF table IT_VBAK
+    where vbeln = IP_VBELN.
+  select * from ztab_vbap
+  into CORRESPONDING FIELDS OF table IT_VBAp
+  where vbeln = IP_VBELN.
+
+  LOOP AT it_vbak INTO WA_vbak.
+
+    WA_final-vbeln = WA_vbak-vbeln.
+    WA_final-erdat = WA_vbak-erdat.
+    WA_final-ernam = WA_vbak-ernam.
+    WA_final-audat = WA_vbak-audat.
+    READ TABLE IT_VBAp INTO WA_vbap WITH KEY vbeln = WA_vbak-vbeln.
+    IF SY-SUBRC = 0.
+      WA_final-matnr = WA_vbap-matnr.
+      WA_final-matwa = WA_vbap-matwa.
+      WA_final-matkl = WA_vbap-matkl.
+    ENDIF.
+
+    APPEND WA_final TO IT_final.
+    CLEAR WA_final.
+  ENDLOOP.
+
+
+
+
+ENDFUNCTION.
