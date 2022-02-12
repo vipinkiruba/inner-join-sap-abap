@@ -1,0 +1,61 @@
+*&---------------------------------------------------------------------*
+*& Report ZR2_INNERJOIN
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+*HERE I HAVE CREATED A REPORT FOR INNER JOIN USING A SINGLE STUCTURE AND BY USING
+*      INNER JOIN QUERY
+
+REPORT zr2_innerjoin.
+TABLES: ztab_vbak,ztab_vbap.
+
+
+*ZST_INNERJOIN IS AN USER DEFINED STUCTURE
+*CREATE IT AND WA FOR THE STUCTURE
+
+DATA: it TYPE TABLE OF zst_innerjoin,
+      wa TYPE zst_innerjoin.
+
+PARAMETERS: vbeln_p TYPE i MATCHCODE OBJECT ZCSH1.
+SELECT-OPTIONS: vbeln_r FOR ztab_vbak-vbeln MATCHCODE OBJECT ZSH1_VBAP.
+
+*USING FORM CALL
+PERFORM insert.
+PERFORM display.
+
+*USE ALIAS NAMES AS A AND B
+*FETCH DATA AND INSERT IT INTO THE STUCTURE
+FORM insert .
+
+  SELECT
+    a~vbeln
+  a~erdat
+  a~ernam
+  a~audat
+    b~matnr
+  b~matwa
+  b~matkl
+  FROM ztab_vbak AS a
+  INNER JOIN ztab_vbap AS b
+  ON b~vbeln = a~vbeln
+  INTO TABLE it
+  WHERE a~vbeln IN vbeln_r.
+
+ENDFORM.
+*NOW THE DATA HAS BEEN INSERTED INTO OUR INTERNAL TABLE
+
+*LOOP AND DISPLAY THE DATA BY USING WORK AREA
+FORM display.
+
+  LOOP AT it INTO wa.
+    WRITE: / wa-vbeln,
+           wa-erdat,
+           wa-ernam,
+           wa-audat,
+           wa-matnr,
+           wa-matwa,
+           wa-matkl.
+  ENDLOOP.
+
+ENDFORM.
