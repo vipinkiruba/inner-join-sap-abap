@@ -7,6 +7,11 @@ FUNCTION MODULE ZM_TAB_ALV
 
 ![image](https://user-images.githubusercontent.com/67626515/153718392-9d97f8ab-3121-494e-9c0c-7618197c6666.png)
 
+FUNCTION MODULE ZM_TAB_ALV_r
+
+![image](https://user-images.githubusercontent.com/67626515/155262656-63ed9a84-4e80-4734-91ef-62b4bb61f32e.png)
+
+
 TABLES
 
 ![image](https://user-images.githubusercontent.com/67626515/153718458-69ea7ec4-bd23-4f72-86c3-5014efda9f14.png)
