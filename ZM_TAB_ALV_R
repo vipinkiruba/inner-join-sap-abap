@@ -1,0 +1,57 @@
+FUNCTION ZM_TAB_ALV_R.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     REFERENCE(S_VBELN) TYPE  ZVPN_RSDSSELOPT_DT
+*"  EXPORTING
+*"     REFERENCE(IT_VBAK) TYPE  ZTAB_VBAK_DT
+*"     REFERENCE(IT_VBAP) TYPE  ZTAB_VBAP_DT
+*"     REFERENCE(IT_FINAL) TYPE  ZST_INNERJOIN_DT
+*"----------------------------------------------------------------------
+data : ls_vbeln like line of s_vbeln.
+ranges : r_vbeln for vbak-vbeln.
+
+loop at s_vbeln into ls_vbeln.
+
+  r_vbeln-sign = ls_vbeln-sign.
+  r_vbeln-option = ls_vbeln-option.
+  r_vbeln-low = ls_vbeln-low.
+  r_vbeln-high = ls_vbeln-high.
+  append r_vbeln.
+
+endloop.
+
+
+
+DATA: WA_final TYPE ZST_INNERJOIN,
+      WA_vbak TYPE ztab_vbak,
+      WA_vbap TYPE ztab_vbap.
+
+  select * from ztab_vbak
+    into CORRESPONDING FIELDS OF table IT_VBAK
+    where vbeln in r_vbeln.
+  select * from ztab_vbap
+  into CORRESPONDING FIELDS OF table IT_VBAp
+  where vbeln in r_vbeln.
+
+  LOOP AT it_vbak INTO WA_vbak.
+
+    WA_final-vbeln = WA_vbak-vbeln.
+    WA_final-erdat = WA_vbak-erdat.
+    WA_final-ernam = WA_vbak-ernam.
+    WA_final-audat = WA_vbak-audat.
+    READ TABLE IT_VBAp INTO WA_vbap WITH KEY vbeln = WA_vbak-vbeln.
+    IF SY-SUBRC = 0.
+      WA_final-matnr = WA_vbap-matnr.
+      WA_final-matwa = WA_vbap-matwa.
+      WA_final-matkl = WA_vbap-matkl.
+    ENDIF.
+
+    APPEND WA_final TO IT_final.
+    CLEAR WA_final.
+  ENDLOOP.
+
+
+
+
+ENDFUNCTION.
